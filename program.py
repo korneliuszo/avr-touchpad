@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import pyudev, os, sys, time
 
@@ -21,11 +21,11 @@ except IndexError:
     filename="usbdev.hex"
 
 a=pyudev.Context()
-c=a.list_devices(subsystem='tty',ID_VENDOR="Arduino_LLC")
+c=a.list_devices(subsystem='tty',ID_VENDOR="SparkFun_Electronics")
 
 try:
-    g=c.__iter__().next()
-except StopIteration:
+    g=list(c)[0]
+except IndexError:
     print("not found Arduino bootloader")
     exit(1)
 
