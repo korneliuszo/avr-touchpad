@@ -47,7 +47,7 @@ const USB_Descriptor_Device_t PROGMEM RelayBoard_DeviceDescriptor =
 {
 	.Header                 = {.Size = sizeof(USB_Descriptor_Device_t), .Type = DTYPE_Device},
 
-	.USBSpecification       = VERSION_BCD(01.10),
+	.USBSpecification       = VERSION_BCD(1,1,0),
 	.Class                  = USB_CSCP_VendorSpecificClass,
 	.SubClass               = USB_CSCP_NoDeviceSubclass,
 	.Protocol               = USB_CSCP_NoDeviceProtocol,
@@ -56,7 +56,7 @@ const USB_Descriptor_Device_t PROGMEM RelayBoard_DeviceDescriptor =
 
 	.VendorID               = 0x03EB,
 	.ProductID              = 0x2040,
-	.ReleaseNumber          = VERSION_BCD(02.00),
+	.ReleaseNumber          = VERSION_BCD(0,0,1),
 
 	.ManufacturerStrIndex   = STRING_ID_Manufacturer,
 	.ProductStrIndex        = STRING_ID_Product,
@@ -154,7 +154,7 @@ const USB_Descriptor_String_t PROGMEM RelayBoard_SerialString =
  *  USB host.
  */
 uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
-                                    const uint8_t wIndex,
+                                    const uint16_t wIndex,
                                     const void** const DescriptorAddress)
 {
 	const uint8_t  DescriptorType   = (wValue >> 8);
