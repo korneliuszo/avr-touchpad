@@ -38,6 +38,46 @@
 
 #include "Descriptors.h"
 
+const USB_Descriptor_HIDReport_Datatype_t PROGMEM MouseReport[] =
+{
+	/* Use the HID class driver's standard Mouse report.
+	 *   Min X/Y Axis values: -1
+	 *   Max X/Y Axis values:  1
+	 *   Min physical X/Y Axis values (used to determine resolution): -1
+	 *   Max physical X/Y Axis values (used to determine resolution):  1
+	 *   Buttons: 3
+	 *   Absolute screen coordinates: false
+	 */
+	HID_RI_USAGE_PAGE(8, 0x01),
+	HID_RI_USAGE(8, 0x02),
+	HID_RI_COLLECTION(8, 0x01),
+		HID_RI_USAGE(8, 0x01),
+		HID_RI_COLLECTION(8, 0x00),
+			HID_RI_USAGE_PAGE(8, 0x09),
+			HID_RI_USAGE_MINIMUM(8, 0x01),
+			HID_RI_USAGE_MAXIMUM(8, 3),
+			HID_RI_LOGICAL_MINIMUM(8, 0x00),
+			HID_RI_LOGICAL_MAXIMUM(8, 0x01),
+			HID_RI_REPORT_COUNT(8, 3),
+			HID_RI_REPORT_SIZE(8, 0x01),
+			HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_ABSOLUTE),
+			HID_RI_REPORT_COUNT(8, 0x01),
+			HID_RI_REPORT_SIZE(8, 5),
+			HID_RI_INPUT(8, HID_IOF_CONSTANT),
+			HID_RI_USAGE_PAGE(8, 0x01),
+			HID_RI_USAGE(8, 0x30),
+			HID_RI_USAGE(8, 0x31),
+			HID_RI_LOGICAL_MINIMUM(16, 0),
+			HID_RI_LOGICAL_MAXIMUM(16, 1023),
+			HID_RI_PHYSICAL_MINIMUM(16, 0),
+			HID_RI_PHYSICAL_MAXIMUM(16, 1),
+			HID_RI_REPORT_COUNT(8, 0x02),
+			HID_RI_REPORT_SIZE(8, 16),
+			HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_ABSOLUTE),
+		HID_RI_END_COLLECTION(0),
+	HID_RI_END_COLLECTION(0)
+};
+
 /** Device descriptor structure. This descriptor, located in FLASH memory, describes the overall
  *  device characteristics, including the supported USB version, control endpoint size and the
  *  number of device configurations. The descriptor is read out by the USB host when the enumeration
@@ -48,7 +88,7 @@ const USB_Descriptor_Device_t PROGMEM RelayBoard_DeviceDescriptor =
 	.Header                 = {.Size = sizeof(USB_Descriptor_Device_t), .Type = DTYPE_Device},
 
 	.USBSpecification       = VERSION_BCD(1,1,0),
-	.Class                  = USB_CSCP_VendorSpecificClass,
+	.Class                  = USB_CSCP_NoDeviceClass,
 	.SubClass               = USB_CSCP_NoDeviceSubclass,
 	.Protocol               = USB_CSCP_NoDeviceProtocol,
 
@@ -94,14 +134,34 @@ const USB_Descriptor_Configuration_t PROGMEM RelayBoard_ConfigurationDescriptor 
 			.InterfaceNumber        = 0,
 			.AlternateSetting       = 0,
 
-			.TotalEndpoints         = 0,
+			.TotalEndpoints         = 1,
 
-			.Class                  = USB_CSCP_VendorSpecificClass,
-			.SubClass               = 0x00,
-			.Protocol               = 0x00,
+			.Class                  = HID_CSCP_HIDClass,
+			.SubClass               = HID_CSCP_NonBootSubclass,
+			.Protocol               = HID_CSCP_NonBootProtocol,
 
 			.InterfaceStrIndex      = NO_DESCRIPTOR
 		},
+		.HID_MouseHID =
+			{
+				.Header                 = {.Size = sizeof(USB_HID_Descriptor_HID_t), .Type = HID_DTYPE_HID},
+
+				.HIDSpec                = VERSION_BCD(1,1,1),
+				.CountryCode            = 0x00,
+				.TotalReportDescriptors = 1,
+				.HIDReportType          = HID_DTYPE_Report,
+				.HIDReportLength        = sizeof(MouseReport)
+			},
+
+		.HID_ReportINEndpoint =
+			{
+				.Header                 = {.Size = sizeof(USB_Descriptor_Endpoint_t), .Type = DTYPE_Endpoint},
+
+				.EndpointAddress        = MOUSE_EPADDR,
+				.Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+				.EndpointSize           = MOUSE_EPSIZE,
+				.PollingIntervalMS      = 0x05
+			}
 };
 
 /** Language descriptor structure. This descriptor, located in FLASH memory, is returned when the host requests
@@ -193,7 +253,14 @@ uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
 					Size    = pgm_read_byte(&RelayBoard_SerialString.Header.Size);
 					break;
 			}
-
+			break;
+		case HID_DTYPE_HID:
+			Address = &RelayBoard_ConfigurationDescriptor.HID_MouseHID;
+			Size    = sizeof(USB_HID_Descriptor_HID_t);
+			break;
+		case HID_DTYPE_Report:
+			Address = &MouseReport;
+			Size    = sizeof(MouseReport);
 			break;
 	}
 

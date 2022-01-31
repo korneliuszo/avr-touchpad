@@ -12,8 +12,8 @@ dev = usb.core.find(idVendor=0x03eb, idProduct=0x2040)
 if dev is not None:
     print('Found DevBoard: resetting')
     dev = usb.core.find(idVendor=0x03eb, idProduct=0x2040)
-    dev.ctrl_transfer(usb.util.CTRL_TYPE_CLASS | usb.util.CTRL_RECIPIENT_DEVICE,0x01)
-    time.sleep(4)
+    dev.ctrl_transfer(usb.util.CTRL_TYPE_VENDOR | usb.util.CTRL_RECIPIENT_DEVICE,0x01)
+    time.sleep(5)
 
 try:
     filename=sys.argv[1]
