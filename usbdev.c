@@ -192,15 +192,13 @@ static struct {
 	uint16_t STBY_XR;
 	uint16_t Y;
 	uint16_t X;
-	uint16_t touch_count;
-	uint8_t tap_timeout;
+	uint8_t full_update;
 } touch_internals;
 
 static struct {
 	uint16_t Y;
 	uint16_t X;
-	uint8_t tapped;
-	uint8_t dragged;
+	uint8_t pressed;
 } touch_vals;
 
 /** Event handler for the USB device Start Of Frame event. */
@@ -232,25 +230,18 @@ void EVENT_USB_Device_StartOfFrame(void)
 
 		if((((uint32_t)touch_internals.X * touch_internals.STBY_YD / touch_internals.STBY_XR) - touch_internals.X) > 500UL)
 		{
-			if(touch_internals.touch_count && (touch_internals.touch_count < 15))
-			{
-				touch_vals.tapped = 1;
-				touch_internals.tap_timeout = 1;
-			}
-			touch_internals.touch_count = 0;
-			if(touch_internals.tap_timeout)
-				touch_internals.tap_timeout++;
-			touch_vals.dragged = 0;
+			touch_vals.pressed = 0;
+			touch_internals.full_update = 0;
 		}
 		else
 		{
-			if(touch_internals.touch_count)
+			if(touch_internals.full_update)
 			{
 				touch_vals.X = touch_internals.X;
 				touch_vals.Y = touch_internals.Y;
-				touch_vals.dragged = (touch_internals.tap_timeout > 0 ) && (touch_internals.tap_timeout < 100);
+				touch_vals.pressed = 1;
 			}
-			touch_internals.touch_count++;
+			touch_internals.full_update = 1;
 		}
 		PORTF = _BV(PIN_YU);
 		DDRF = _BV(PIN_YU) | _BV(PIN_YD);
@@ -298,9 +289,7 @@ bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const HIDIn
 	MouseReport->Y = touch_vals.Y;
 	MouseReport->X = touch_vals.X;
 
-	MouseReport->Button = touch_vals.tapped;
-	MouseReport->Button |= touch_vals.dragged;
-	touch_vals.tapped = 0;
+	MouseReport->Button = touch_vals.pressed;
 
 	*ReportSize = sizeof(USB_MouseReport16_Data_t);
 	return true;
