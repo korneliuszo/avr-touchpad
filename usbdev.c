@@ -193,12 +193,14 @@ static struct {
 	uint16_t Y;
 	uint16_t X;
 	uint16_t touch_count;
+	uint8_t tap_timeout;
 } touch_internals;
 
 static struct {
 	uint16_t Y;
 	uint16_t X;
 	uint8_t tapped;
+	uint8_t dragged;
 } touch_vals;
 
 /** Event handler for the USB device Start Of Frame event. */
@@ -227,11 +229,18 @@ void EVENT_USB_Device_StartOfFrame(void)
 		if(!ReadADC(&touch_internals.STBY_XR))
 			break;
 		//calculations
+
 		if((((uint32_t)touch_internals.X * touch_internals.STBY_YD / touch_internals.STBY_XR) - touch_internals.X) > 500UL)
 		{
 			if(touch_internals.touch_count && (touch_internals.touch_count < 15))
+			{
 				touch_vals.tapped = 1;
+				touch_internals.tap_timeout = 1;
+			}
 			touch_internals.touch_count = 0;
+			if(touch_internals.tap_timeout)
+				touch_internals.tap_timeout++;
+			touch_vals.dragged = 0;
 		}
 		else
 		{
@@ -239,6 +248,7 @@ void EVENT_USB_Device_StartOfFrame(void)
 			{
 				touch_vals.X = touch_internals.X;
 				touch_vals.Y = touch_internals.Y;
+				touch_vals.dragged = (touch_internals.tap_timeout > 0 ) && (touch_internals.tap_timeout < 100);
 			}
 			touch_internals.touch_count++;
 		}
@@ -289,6 +299,7 @@ bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const HIDIn
 	MouseReport->X = touch_vals.X;
 
 	MouseReport->Button = touch_vals.tapped;
+	MouseReport->Button |= touch_vals.dragged;
 	touch_vals.tapped = 0;
 
 	*ReportSize = sizeof(USB_MouseReport16_Data_t);
